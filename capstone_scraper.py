@@ -60,7 +60,7 @@ def main():
         page.wait_for_timeout(3000)
 
         cnt = -1
-        for _ in range(10) :
+        for _ in range(35) :
             #scroll
             page.hover('//div[@class="odk6He"]')
             for _ in range(25):
