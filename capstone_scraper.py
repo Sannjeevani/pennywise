@@ -2,6 +2,7 @@ from playwright.sync_api import sync_playwright
 from dataclasses import dataclass, asdict, field
 import pandas as pd
 import argparse
+from openpyxl import load_workbook
 
 @dataclass
 class Review:
@@ -22,8 +23,22 @@ class ReviewList :
         """
         return pd.json_normalize((asdict(review) for review in self.review_list), sep="_")
 
-    def save_to_csv(self, filename):
-    	self.dataframe().to_csv(f'./capstone/{filename}.csv', index=False)
+    def save_to_excel(self, filename):
+    	# self.dataframe().to_csv(f'./capstone/{filename}.csv', index=False)
+        df = self.dataframe()
+        file = f"./capstone/{filename}.xlsx"
+
+        # workbook = load_workbook(file)
+        # writer = pd.ExcelWriter(file, engine='openpyxl')
+        # writer.book = workbook
+        # writer.sheets = {ws.title: ws for ws in workbook.worksheets}
+
+        # df.to_excel(writer, startrow=writer.sheets['Sheet1'].max_row, index = False, header= False)
+        # writer.close()
+
+        with pd.ExcelWriter(file, mode='a', engine='openpyxl', if_sheet_exists='overlay') as writer :
+            df.to_excel(writer, sheet_name='Sheet1', startrow=writer.sheets['Sheet1'].max_row, index=False, header=False)
+            # writer.close()
 
 def main():
     with sync_playwright() as p:
@@ -44,54 +59,65 @@ def main():
         page.locator('//button[@class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-dgl2Hf ksBjEc lKxP2d LQeN7 aLey0c"]').click()
         page.wait_for_timeout(3000)
 
-        #scroll
-        page.hover('//div[@class="odk6He"]')
-        for _ in range(10):
-            page.mouse.wheel(0, 5000)
-            page.wait_for_timeout(2000)
+        cnt = -1
+        for _ in range(10) :
+            #scroll
+            page.hover('//div[@class="odk6He"]')
+            for _ in range(25):
+                page.mouse.wheel(0, 5000)
+                page.wait_for_timeout(2000)
 
-        username_xpath = '//header[@class="c1bOId"]/div[@class="YNR7H"]/div[@class="gSGphe"]/div[@class="X5PpBb"]'
-        review_xpath = '//div[@class="h3YV2d"]'
-        star_count_xpath = '//header[@class="c1bOId"]/div[2]/div/span/span[@class="Z1Dz7b"]'
+            username_xpath = '//header[@class="c1bOId"]/div[@class="YNR7H"]/div[@class="gSGphe"]/div[@class="X5PpBb"]'
+            review_xpath = '//div[@class="h3YV2d"]'
+            star_count_xpath = '//header[@class="c1bOId"]/div[2]/div/span/span[@class="Z1Dz7b"]'
 
 
-        rl = ReviewList()        
-        reviewBox_xpath = '//div[@class="odk6He"]/div/div[@class="RHo1pe"]'        
-        reviewsList = page.locator(reviewBox_xpath).all()
-        print(len(reviewsList))
+            rl = ReviewList()        
+            reviewBox_xpath = '//div[@class="odk6He"]/div/div[@class="RHo1pe"]'        
+            reviewsList = page.locator(reviewBox_xpath).all()
+            print(len(reviewsList))
 
-        for j in range(len(reviewsList)):
-            reviewNode = Review()
-            #username
-            try:
-                node = reviewsList[j].locator(username_xpath)
-                reviewNode.username = node.inner_text()
-                print(f"USERNAME: {reviewNode.username}")
-            except:
-                reviewNode.username = None
+            cnt +=1
+            for j in range(cnt, len(reviewsList)):
+                reviewNode = Review()
+                #username
+                print(f"REVIEW #{j+1}")
+                try:
+                    node = reviewsList[j].locator(username_xpath)
+                    reviewNode.username = node.inner_text()
+                    print(f"USERNAME: {reviewNode.username}")
+                except:
+                    reviewNode.username = None
 
-            #review
-            try:
-                node = reviewsList[j].locator(review_xpath)
-                reviewNode.review = node.inner_text()
-                print(f"REVIEW = {reviewNode.review}")
-            except:
-                reviewNode.review = None
-                print(reviewNode.review)
-            
-            # star count
-            try :
-                nodes = reviewsList[j].locator(star_count_xpath).all()
-                reviewNode.star_rating = len(nodes)
-                print(f"STAR RATING = {reviewNode.star_rating}\n")
-            except : 
-                reviewNode.star_rating = None
+                #review
+                try:
+                    node = reviewsList[j].locator(review_xpath)
+                    reviewNode.review = node.inner_text()
+                    print(f"REVIEW = {reviewNode.review}")
+                except:
+                    reviewNode.review = None
+                    print(reviewNode.review)
+                
+                # star count
+                try :
+                    nodes = reviewsList[j].locator(star_count_xpath).all()
+                    reviewNode.star_rating = len(nodes)
+                    print(f"STAR RATING = {reviewNode.star_rating}\n")
+                except : 
+                    reviewNode.star_rating = None
 
-            rl.review_list.append(reviewNode)
+                rl.review_list.append(reviewNode)
+                cnt = j
 
-        rl.save_to_csv(f"freecharge")       
-    
+            rl.save_to_excel("freecharge")     
+
         browser.close()
+
+        # cleaning up the data file - adding headers
+        df = pd.read_excel('./capstone/freecharge.xlsx')
+        headers = ['username', 'star_rating', 'review']
+        df.columns = headers
+        df.to_excel('./capstone/freecharge.xlsx',index=False)
 
 if __name__ == "__main__":
 
@@ -106,5 +132,6 @@ if __name__ == "__main__":
         # in case no arguments passed:
         # scraper will search for this on Google Maps
         search_for = 'freecharge'
+    
 
 main()
