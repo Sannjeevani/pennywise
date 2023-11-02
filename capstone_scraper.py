@@ -47,7 +47,7 @@ def main():
         
         #open browser window
         page.goto("https://play.google.com/store", timeout=60000)
-        search_for = f"freecharge" 
+        search_for = f"paytm" 
         
         page.locator('//button[@class="VfPpkd-Bz112c-LgbsSe yHy1rc eT1oJ mN1ivc"]').click()
         page.locator('//input[@class="HWAcU"]').fill(search_for)
@@ -60,7 +60,11 @@ def main():
         page.wait_for_timeout(3000)
 
         cnt = -1
-        for _ in range(35) :
+        for x in range(35) :
+            
+            if cnt >= 10000 : break
+
+            print(f"====================================== SCROLL RUN {x+1} ========================================")
             #scroll
             page.hover('//div[@class="odk6He"]')
             for _ in range(25):
@@ -109,15 +113,15 @@ def main():
                 rl.review_list.append(reviewNode)
                 cnt = j
 
-            rl.save_to_excel("freecharge")     
+            rl.save_to_excel("paytm")     
 
         browser.close()
 
         # cleaning up the data file - adding headers
-        df = pd.read_excel('./capstone/freecharge.xlsx')
+        df = pd.read_excel('./capstone/paytm.xlsx')
         headers = ['username', 'star_rating', 'review']
         df.columns = headers
-        df.to_excel('./capstone/freecharge.xlsx',index=False)
+        df.to_excel('./capstone/paytm.xlsx',index=False)
 
 if __name__ == "__main__":
 
@@ -131,7 +135,7 @@ if __name__ == "__main__":
     else:
         # in case no arguments passed:
         # scraper will search for this on Google Maps
-        search_for = 'freecharge'
+        search_for = 'paytm'
     
 
 main()
