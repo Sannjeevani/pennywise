@@ -75,6 +75,13 @@ def main():
             reviewsList = page.locator(reviewBox_xpath).all()
             print(len(reviewsList))
 
+            async def getLikes(node, xpath) :
+                text = await page.wait_for_timeout(
+                    (node.locator(xpath)).element_handle().inner_text(),
+                    timeout=2
+                )
+                return text
+
             cnt +=1
             for j in range(cnt, len(reviewsList)):
                 reviewNode = Review()
@@ -114,7 +121,7 @@ def main():
                     print(reviewNode.review)
 
                 try:
-                    text = (reviewsList[j].locator(likes_xpath)).element_handle().inner_text()
+                    text = getLikes(reviewsList[j], likes_xpath)
                     l = int(text.split(" ")[0].replace(',', ""))
                     print(f"LIKES = {l}")
                     reviewNode.likes = l
